@@ -1,0 +1,25 @@
+# Dependencias de Node
+node_modules/
+package-lock.json
+
+# Archivos con credenciales sensibles
+includes/config/database.php
+
+# Almacén de subidas dinámicas (ignora fotos subidas pero conserva la carpeta)
+imagenes/*
+!imagenes/.gitkeep
+
+# Basura de sistemas operativos y editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Backups y temporales de Base de Datos
+*.bak
+*.sql.gz
+*.log
+
+# Documentos temporales de Word
+~$*.docx

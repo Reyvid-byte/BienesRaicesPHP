@@ -1,0 +1,203 @@
+<?php
+require_once __DIR__ . '/../../includes/funciones.php';
+
+if (!estaAutenticado()) {
+    header('Location: /login.php');
+    exit;
+}
+
+// Base de datos
+    
+    // Base de datos
+    require '../../includes/config/database.php';
+    $db = conectarDB();
+
+    // Consultar pra obtener los vendedores
+    $consulta = "SELECT * FROM vendedores";
+    $resultado = mysqli_query($db, $consulta);
+    
+    // importantes
+    // Cambio de variables
+    // $vendedorID = $vendedores_id_vendedores
+    // $vendedor['id'] = $vendedores['id_vendedores']
+
+    // Arreglo con mensajes de errores
+    $errores = [];
+
+    $titulo = '';
+    $precio = '';
+    $descripcion = '';
+    $habitaciones = '';
+    $wc = '';
+    $estacionamientos = '';
+    $vendedores_id_vendedores = '';
+
+
+    // Ejercutar el codigo tras envio de formulario
+    if($_SERVER['REQUEST_METHOD'] == 'POST') {
+        //echo "<pre>";
+        //var_dump($_POST);
+        //echo "</pre>";
+
+
+        $titulo = mysqli_real_escape_string($db, $_POST['titulo']);
+        $precio = mysqli_real_escape_string($db, $_POST['precio']);
+        $descripcion = mysqli_real_escape_string($db, $_POST['descripcion']);
+        $habitaciones = mysqli_real_escape_string($db, $_POST['habitaciones']);
+        $wc = mysqli_real_escape_string($db, $_POST['wc']);
+        $estacionamientos = mysqli_real_escape_string($db, $_POST['estacionamientos']);
+        $vendedores_id_vendedores = mysqli_real_escape_string($db, $_POST['vendedores_id_vendedores']);
+        $creado = date('Y/m/d');
+
+        // Asignar files a una variable
+        $imagen = $_FILES['imagen'];
+
+
+        if(!$titulo) {
+            $errores[] = "Debes agregar un Titulo";
+        }
+
+        if(!$precio) {
+            $errores[] = "El Precio es obligatorio";
+        }
+
+        if( strlen($descripcion) < 30 ) {
+            $errores[] = "La Descripcion es Obligatoria y de almenos 30 caracteres";
+        }
+
+        if(!$habitaciones) {
+            $errores[] = "El Numero de Habitaciones es obligatorio";
+        }
+
+        if(!$wc) {
+            $errores[] = "El Numero de Baños es obligatorio";
+        }
+
+        if(!$estacionamientos) {
+            $errores[] = "El Numero de Estacionamientos es obligatorio";
+        }
+
+        if(!$vendedores_id_vendedores) {
+            $errores[] = "Elige un vendedor";
+        }
+
+        if(!$imagen['name'] || $imagen['error']) {
+            $errores[] = 'La imagen es obligatoria';
+        }
+
+        // validar por tamano (1 mb)
+        
+        $medida = 1000 * 1000;
+        if ($imagen['size'] > $medida) {
+            $errores[] = 'La imagen es muy pesada';
+        }
+
+        // echo "<pre>";
+        // var_dump($errores);
+        // echo "</pre>";
+
+        // Revisar que el array de errores este vacio
+
+        if(empty($errores)) {
+            // Subida de archivos
+
+            // Crear carpetas
+            $carpetaImagenes = '../../imagenes/';
+
+            if(!is_dir($carpetaImagenes)) {
+                mkdir($carpetaImagenes);
+            }
+
+            // Generar un nombre unico
+            $nombreImagen = md5( uniqid( rand(), true)) . ".jpg";
+
+            // Subir Imagen 
+            move_uploaded_file($imagen['tmp_name'], $carpetaImagenes . $nombreImagen );
+
+            // Insertar en la base de datos
+            $query = " INSERT INTO propiedades (titulo, precio, imagen, descripcion, habitaciones, wc, 
+            estacionamientos, creado, vendedores_id_vendedores) VALUES ( '$titulo', '$precio', '$nombreImagen',
+            '$descripcion', '$habitaciones', '$wc', '$estacionamientos', '$creado', '$vendedores_id_vendedores') ";
+
+            // echo $query;
+
+            $resultado = mysqli_query($db, $query);
+
+            if ($resultado) {
+                // echo "Insertado Correctamente";
+                // Redireccionar al usuario
+
+                header('Location: /admin?resultado=1');
+            }
+        }
+    }
+
+    require_once __DIR__ . '/../../includes/funciones.php';?>
+
+<?php
+require_once __DIR__ . '/../../includes/funciones.php';
+incluirTemplate('header');
+?>
+
+    <main class="contenedor seccion">
+        <h1>Crear</h1>
+
+        <a href="/admin" class="boton boton-verde">Volver</a>
+
+        <?php foreach($errores as $error): ?>
+        <div class="alerta error">
+            <?php echo $error ?>
+        </div>
+        <?php endforeach; ?>
+
+        <form action="/admin/propiedades/crear.php" class="formulario" method="POST" enctype="multipart/form-data">
+            <fieldset>
+                <legend>Información General</legend>
+
+                <label for="titulo">Titulo</label>
+                <input type="text" id="titulo" name="titulo" placeholder="Titulo Propiedad" value="<?php echo $titulo; ?>">
+
+                <label for="precio">Precio</label>
+                <input type="number" id="precio" name="precio" placeholder="Precio Propiedad" value="<?php echo $precio; ?>">
+
+                <label for="imagen">Imagen</label>
+                <input type="file" id="imagen" accept="image/jpeg, image/png" name = "imagen">
+
+                <label for="descripcion">Descripción:</label>
+                <textarea id="descripcion" name="descripcion"><?php echo $descripcion; ?></textarea>
+
+            </fieldset>
+
+            <fieldset>
+                <legend>Información de Propiedad</legend>
+
+                <label for="habitaciones">Habitaciones</label>
+                <input type="number" id="habitaciones" name="habitaciones" placeholder="Ej: 3" min="1", max="9" value="<?php echo $habitaciones; ?>">
+
+                <label for="wc">Baños</label>
+                <input type="number" id="wc" name="wc" placeholder="Ej: 2" min="1", max="9" value="<?php echo $wc; ?>">
+
+                <label for="estacionamientos">Estacionamientos</label>
+                <input type="number" id="estacionamientos" name="estacionamientos" placeholder="Ej: 2" min="1", max="9" value="<?php echo $estacionamientos; ?>">                
+
+            </fieldset>
+
+            <fieldset>
+                <legend>Vendedor</legend>
+
+                <select name="vendedores_id_vendedores" id="">
+                    <option value="">-- Seleccione un vendedor --</option>
+                    <?php while($vendedores = mysqli_fetch_assoc($resultado)) : ?>
+                        <option <?php echo $vendedores_id_vendedores == $vendedores['id_vendedores'] ? 'selected' : ''; ?> value="<?php echo htmlspecialchars($vendedores['id_vendedores']); ?>"><?php echo htmlspecialchars($vendedores['nombre'] . " " . $vendedores['apellido']); ?></option>   
+                    <?php endwhile ?>
+                </select>
+
+            </fieldset>
+
+            <input type="submit" value="Crear Propiedad" class="boton boton-verde">
+        </form>
+    </main>
+
+<?php 
+    incluirTemplate('footer');
+?>
